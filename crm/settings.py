@@ -8,7 +8,7 @@ import dj_database_url
 # ====================
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Load environment variables (local only)
+# Load local .env (Railway uses Variables, but this is safe for local)
 load_dotenv(BASE_DIR / ".env")
 
 # ====================
@@ -18,7 +18,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-secret-key")
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
 # ====================
-# Allowed hosts & CSRF
+# Hosts & CSRF
 # ====================
 ALLOWED_HOSTS = [
     "django-khmer25-production.up.railway.app",
@@ -33,12 +33,13 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 # ====================
-# CORS (IMPORTANT for Flutter Web on Vercel)
+# CORS (Flutter Web on Vercel)
 # ====================
 CORS_ALLOWED_ORIGINS = [
     "https://flutter-khmer25-xslz.vercel.app",
 ]
 
+# Allow all Vercel preview deployments
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://.*\.vercel\.app$",
 ]
@@ -55,11 +56,8 @@ CORS_ALLOW_HEADERS = [
     "x-requested-with",
 ]
 
-# If using cookies (usually not for JWT):
-# CORS_ALLOW_CREDENTIALS = True
-
 # ====================
-# Cloudinary Storage
+# Cloudinary (Media Storage)
 # ====================
 CLOUDINARY_STORAGE = {
     "CLOUD_NAME": os.getenv("CLOUDINARY_CLOUD_NAME"),
@@ -67,16 +65,23 @@ CLOUDINARY_STORAGE = {
     "API_SECRET": os.getenv("CLOUDINARY_API_SECRET"),
 }
 
-DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
+# Django 4.2+ recommended way (use STORAGES)
+STORAGES = {
+    "default": {
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # ====================
-# Static & Media files
+# Static & Media URLs
 # ====================
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-MEDIA_URL = "/media/"
+MEDIA_URL = "/media/"  # Cloudinary will still return https Cloudinary URLs via .url
 
 # ====================
 # Installed Apps
@@ -142,13 +147,14 @@ TEMPLATES = [
 WSGI_APPLICATION = "crm.wsgi.application"
 
 # ====================
-# Database
+# Database (Railway)
 # ====================
+DATABASE_URL = os.getenv("DATABASE_URL", "")
 DATABASES = {
     "default": dj_database_url.parse(
-        os.getenv("DATABASE_URL", ""),
+        DATABASE_URL,
         conn_max_age=600,
-        ssl_require=True,
+        ssl_require=True if DATABASE_URL else False,
     )
 }
 
@@ -190,15 +196,19 @@ DJOSER = {
 }
 
 # ====================
-# Railway HTTPS / Proxy Fix
+# Railway proxy HTTPS
 # ====================
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 USE_X_FORWARDED_HOST = True
 
 # ====================
-# Optional Security Settings
+# Security (prod)
 # ====================
 SECURE_SSL_REDIRECT = not DEBUG
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
-        
+
+# ====================
+# Django defaults
+# ====================
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
