@@ -24,12 +24,14 @@ ALLOWED_HOSTS = [
     "django-khmer25-production.up.railway.app",
     "localhost",
     "127.0.0.1",
+    "http://localhost:60077"
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     "https://django-khmer25-production.up.railway.app",
     "https://flutter-khmer25-xslz.vercel.app",
     "https://*.vercel.app",
+    "http://localhost:60077"
 ]
 
 # ====================
