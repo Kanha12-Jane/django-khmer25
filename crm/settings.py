@@ -22,10 +22,12 @@ DEBUG = os.getenv("DEBUG") == "True"
 # ====================
 ALLOWED_HOSTS = [
     "django-khmer25-production.up.railway.app",
+    "flutter-khmer25-xslz.vercel.app",  # Flutter frontend domain
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     "https://django-khmer25-production.up.railway.app",
+    "https://flutter-khmer25-xslz.vercel.app",  # Flutter frontend domain
 ]
 
 # Allow localhost for development
