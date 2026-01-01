@@ -8,7 +8,7 @@ import dj_database_url
 # ====================
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Load .env
+# Load environment variables
 load_dotenv(BASE_DIR / ".env")
 
 # ====================
@@ -17,7 +17,21 @@ load_dotenv(BASE_DIR / ".env")
 SECRET_KEY = os.getenv("SECRET_KEY")
 DEBUG = os.getenv("DEBUG") == "True"
 
-ALLOWED_HOSTS = ["*"]  # or your Railway app URL in production
+# ====================
+# Allowed hosts & CSRF
+# ====================
+ALLOWED_HOSTS = [
+    "django-khmer25-production.up.railway.app",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://django-khmer25-production.up.railway.app",
+]
+
+# Allow localhost for development
+if DEBUG:
+    ALLOWED_HOSTS += ["127.0.0.1", "localhost"]
+    CSRF_TRUSTED_ORIGINS += ["http://127.0.0.1:8000", "http://localhost:8000"]
 
 # ====================
 # Cloudinary Storage
@@ -28,15 +42,14 @@ CLOUDINARY_STORAGE = {
     "API_SECRET": os.getenv("CLOUDINARY_API_SECRET"),
 }
 
-# Use Cloudinary for media files
 DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
 
-# Static files: collect locally, serve via WhiteNoise or Railway
+# ====================
+# Static & Media files
+# ====================
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-
-# Optional: if you want Cloudinary for static files too
-# STATICFILES_STORAGE = "cloudinary_storage.storage.StaticCloudinaryStorage"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = "/media/"
 
@@ -66,8 +79,7 @@ INSTALLED_APPS = [
 # ====================
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    # Add WhiteNoise middleware if you want static serving in production
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # must be after SecurityMiddleware
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -99,7 +111,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'crm.wsgi.application'
 
 # ====================
-# Database (Railway)
+# Database
 # ====================
 DATABASES = {
     "default": dj_database_url.parse(
@@ -147,6 +159,8 @@ DJOSER = {
 }
 
 # ====================
-# WhiteNoise for static files in production
+# Optional Security Settings
 # ====================
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+SECURE_SSL_REDIRECT = not DEBUG  # redirect HTTP to HTTPS in production
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
