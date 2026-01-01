@@ -8,7 +8,7 @@ import dj_database_url
 # ====================
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Load environment variables
+# Load environment variables (local only)
 load_dotenv(BASE_DIR / ".env")
 
 # ====================
@@ -26,8 +26,6 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
 ]
 
-# CSRF is mainly for cookie/session auth (admin forms).
-# For JWT APIs it's usually not needed, but keep it safe:
 CSRF_TRUSTED_ORIGINS = [
     "https://django-khmer25-production.up.railway.app",
     "https://flutter-khmer25-xslz.vercel.app",
@@ -41,12 +39,10 @@ CORS_ALLOWED_ORIGINS = [
     "https://flutter-khmer25-xslz.vercel.app",
 ]
 
-# Allow all Vercel preview domains too
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://.*\.vercel\.app$",
 ]
 
-# If you use Authorization: Bearer ...
 CORS_ALLOW_HEADERS = [
     "accept",
     "accept-encoding",
@@ -59,8 +55,7 @@ CORS_ALLOW_HEADERS = [
     "x-requested-with",
 ]
 
-# If your frontend sends cookies (usually NO for JWT),
-# you can enable this:
+# If using cookies (usually not for JWT):
 # CORS_ALLOW_CREDENTIALS = True
 
 # ====================
@@ -97,7 +92,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
 
-    "corsheaders",  # ✅ MUST be before DRF apps is ok
+    "corsheaders",
 
     "rest_framework",
     "rest_framework_simplejwt",
@@ -114,12 +109,10 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
 
-    # ✅ CORS middleware MUST be near the top (before CommonMiddleware)
     "corsheaders.middleware.CorsMiddleware",
-
-    "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
 
+    "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -197,7 +190,7 @@ DJOSER = {
 }
 
 # ====================
-# Railway HTTPS / Proxy Fix (IMPORTANT)
+# Railway HTTPS / Proxy Fix
 # ====================
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 USE_X_FORWARDED_HOST = True
@@ -208,3 +201,4 @@ USE_X_FORWARDED_HOST = True
 SECURE_SSL_REDIRECT = not DEBUG
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
+        
