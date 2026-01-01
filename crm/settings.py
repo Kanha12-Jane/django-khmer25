@@ -17,7 +17,7 @@ load_dotenv(BASE_DIR / ".env")
 SECRET_KEY = os.getenv("SECRET_KEY")
 DEBUG = os.getenv("DEBUG") == "True"
 
-ALLOWED_HOSTS = ["*"]  # change in production
+ALLOWED_HOSTS = ["*"]  # or your Railway app URL in production
 
 # ====================
 # Cloudinary Storage
@@ -28,14 +28,17 @@ CLOUDINARY_STORAGE = {
     "API_SECRET": os.getenv("CLOUDINARY_API_SECRET"),
 }
 
-STORAGES = {
-    "default": {
-        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
-    },
-    "staticfiles": {
-        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-    },
-}
+# Use Cloudinary for media files
+DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
+
+# Static files: collect locally, serve via WhiteNoise or Railway
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Optional: if you want Cloudinary for static files too
+# STATICFILES_STORAGE = "cloudinary_storage.storage.StaticCloudinaryStorage"
+
+MEDIA_URL = "/media/"
 
 # ====================
 # Installed Apps
@@ -63,6 +66,8 @@ INSTALLED_APPS = [
 # ====================
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # Add WhiteNoise middleware if you want static serving in production
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -100,7 +105,7 @@ DATABASES = {
     "default": dj_database_url.parse(
         os.getenv("DATABASE_URL"),
         conn_max_age=600,
-        ssl_require=True,  # Railway requires SSL
+        ssl_require=True,
     )
 }
 
@@ -123,12 +128,6 @@ USE_I18N = True
 USE_TZ = True
 
 # ====================
-# Static & Media
-# ====================
-STATIC_URL = 'static/'
-MEDIA_URL = "/media/"
-
-# ====================
 # REST Framework + Djoser
 # ====================
 REST_FRAMEWORK = {
@@ -146,3 +145,8 @@ DJOSER = {
         "current_user": "users.serializers.CustomUserSerializer",
     }
 }
+
+# ====================
+# WhiteNoise for static files in production
+# ====================
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
