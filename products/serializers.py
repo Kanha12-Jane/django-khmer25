@@ -1,6 +1,11 @@
 from decimal import Decimal
 from rest_framework import serializers
-from .models import Category, Product, Cart, CartItem
+
+from .models import (
+    Category, Product,
+    Cart, CartItem,
+    Order, OrderItem, PaymentProof
+)
 
 # ----------------------------
 # Category Serializer (Nested)
@@ -36,18 +41,15 @@ class RelatedProductSerializer(serializers.ModelSerializer):
         ]
 
     def get_final_price(self, obj):
-        if obj.discount_percent and obj.discount_percent > 0:
-            discount = (obj.price * Decimal(obj.discount_percent)) / Decimal(100)
-            return obj.price - discount
-        return obj.price
+        return obj.final_price
 
     def get_price_text(self, obj):
-        p = self.get_final_price(obj)
+        p = Decimal(obj.final_price)
         return f"{p:,.0f}៛ / {obj.unit}" if obj.unit else f"{p:,.0f}៛"
 
 
 # -----------------------------------------
-# Product Serializer (LIST) - Fast response
+# Product Serializer (LIST)
 # -----------------------------------------
 class ProductSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
@@ -63,21 +65,18 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            "id","name","slug","sku","image",
-            "price","discount_percent","final_price","price_text",
-            "stock","is_in_stock","is_new","is_featured","is_active",
-            "description","unit","created_at","updated_at",
-            "category","category_id",
+            "id", "name", "slug", "sku", "image",
+            "price", "discount_percent", "final_price", "price_text",
+            "stock", "is_in_stock", "is_new", "is_featured", "is_active",
+            "description", "unit", "created_at", "updated_at",
+            "category", "category_id",
         ]
 
     def get_final_price(self, obj):
-        if obj.discount_percent and obj.discount_percent > 0:
-            discount = (obj.price * Decimal(obj.discount_percent)) / Decimal(100)
-            return obj.price - discount
-        return obj.price
+        return obj.final_price
 
     def get_price_text(self, obj):
-        p = self.get_final_price(obj)
+        p = Decimal(obj.final_price)
         return f"{p:,.0f}៛ / {obj.unit}" if obj.unit else f"{p:,.0f}៛"
 
 
@@ -109,20 +108,17 @@ class CartProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            "id","name","image",
-            "price","discount_percent",
-            "final_price","price_text",
-            "unit","is_in_stock",
+            "id", "name", "image",
+            "price", "discount_percent",
+            "final_price", "price_text",
+            "unit", "is_in_stock",
         ]
 
     def get_final_price(self, obj):
-        if obj.discount_percent and obj.discount_percent > 0:
-            discount = (obj.price * Decimal(obj.discount_percent)) / Decimal(100)
-            return obj.price - discount
-        return obj.price
+        return obj.final_price
 
     def get_price_text(self, obj):
-        p = self.get_final_price(obj)
+        p = Decimal(obj.final_price)
         return f"{p:,.0f}៛ / {obj.unit}" if obj.unit else f"{p:,.0f}៛"
 
 
@@ -146,13 +142,122 @@ class CartItemSerializer(serializers.ModelSerializer):
 class CartSerializer(serializers.ModelSerializer):
     items = CartItemSerializer(many=True, read_only=True)
     total = serializers.SerializerMethodField()
+    total_text = serializers.SerializerMethodField()
 
     class Meta:
         model = Cart
-        fields = ["id", "items", "total"]
+        fields = ["id", "items", "total", "total_text"]
 
     def get_total(self, cart: Cart):
         total = Decimal("0")
         for it in cart.items.select_related("product").all():
             total += Decimal(it.qty) * Decimal(it.product.final_price)
         return total
+
+    def get_total_text(self, cart: Cart):
+        t = self.get_total(cart)
+        return f"{Decimal(t):,.0f}៛"
+
+
+# ==========================
+# ✅ ORDER + PAYMENT PROOF
+# ==========================
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    product_image = serializers.SerializerMethodField()
+    unit = serializers.SerializerMethodField()
+    line_total = serializers.SerializerMethodField()
+
+    class Meta:
+        model = OrderItem
+        fields = [
+            "id",
+            "product",          # product id
+            "product_name",
+            "product_image",
+            "unit_price",
+            "qty",
+            "unit",
+            "line_total",
+        ]
+
+    def get_product_image(self, obj):
+        # safe: image url if exists
+        try:
+            if obj.product and obj.product.image:
+                return obj.product.image.url
+        except Exception:
+            pass
+        return None
+
+    def get_unit(self, obj):
+        try:
+            return obj.product.unit
+        except Exception:
+            return None
+
+    def get_line_total(self, obj):
+        return Decimal(obj.unit_price) * Decimal(obj.qty)
+
+
+class PaymentProofSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PaymentProof
+        fields = ["id", "image", "note", "status", "created_at"]
+        read_only_fields = ["status", "created_at"]
+
+
+class OrderListSerializer(serializers.ModelSerializer):
+    """✅ light serializer for order history list"""
+    items_count = serializers.SerializerMethodField()
+    total_text = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Order
+        fields = [
+            "id", "order_code", "status",
+            "total", "total_text",
+            "created_at",
+            "items_count",
+        ]
+
+    def get_items_count(self, obj: Order):
+        return obj.items.count()
+
+    def get_total_text(self, obj: Order):
+        return f"{Decimal(obj.total):,.0f}៛"
+
+
+class OrderDetailSerializer(serializers.ModelSerializer):
+    """✅ detail serializer with items + proof"""
+    items = OrderItemSerializer(many=True, read_only=True)
+    payment_proof = PaymentProofSerializer(read_only=True)
+    items_count = serializers.SerializerMethodField()
+    total_text = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Order
+        fields = [
+            "id", "order_code", "status",
+            "phone", "address", "note",
+            "total", "total_text", "created_at",
+            "items_count",
+            "items",
+            "payment_proof",
+        ]
+        read_only_fields = [
+            "order_code", "status", "total", "created_at",
+            "items", "payment_proof",
+        ]
+
+    def get_items_count(self, obj: Order):
+        return obj.items.count()
+
+    def get_total_text(self, obj: Order):
+        return f"{Decimal(obj.total):,.0f}៛"
+
+
+class CheckoutSerializer(serializers.Serializer):
+    phone = serializers.CharField(max_length=20)
+    address = serializers.CharField()
+    note = serializers.CharField(required=False, allow_blank=True, default="")

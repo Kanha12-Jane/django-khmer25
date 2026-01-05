@@ -2,6 +2,17 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 import dj_database_url
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),   # ✅ 1 day
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=2),  # ✅ 2 days
+    # optional but good:
+    "ROTATE_REFRESH_TOKENS": False,
+    "BLACKLIST_AFTER_ROTATION": False,
+    "UPDATE_LAST_LOGIN": False,
+}
+
 
 # ====================
 # Paths
@@ -21,17 +32,19 @@ DEBUG = os.getenv("DEBUG", "False") == "True"
 # Hosts & CSRF
 # ====================
 ALLOWED_HOSTS = [
+    # "*",
     "django-khmer25-production.up.railway.app",
     "localhost",
     "127.0.0.1",
-    "http://localhost:60077"
+    "192.168.2.27",
+
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     "https://django-khmer25-production.up.railway.app",
     "https://flutter-khmer25-xslz.vercel.app",
     "https://*.vercel.app",
-    "http://localhost:60077"
+    "http://192.168.2.27:8000",
 ]
 
 # ====================
