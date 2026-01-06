@@ -4,7 +4,7 @@ from .views import (
     ProductViewSet,
     CartViewSet,
     CartItemViewSet,
-    OrderViewSet,   # ✅ add
+    OrderViewSet, 
 )
 
 router = DefaultRouter()
@@ -15,6 +15,6 @@ router.register("products", ProductViewSet, basename="products")
 router.register("cart", CartViewSet, basename="cart")
 router.register("cart/items", CartItemViewSet, basename="cart-items")
 
-router.register("orders", OrderViewSet, basename="orders")  # ✅ add
+router.register("orders", OrderViewSet, basename="orders")
 
 urlpatterns = router.urls

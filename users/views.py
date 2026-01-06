@@ -3,14 +3,14 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework_simplejwt.authentication import JWTAuthentication  # ✅ ADD
+from rest_framework_simplejwt.authentication import JWTAuthentication 
 
 from .models import Profile
 from .serializers import ProfileSerializer
 
 
 class MyProfileView(APIView):
-    authentication_classes = [JWTAuthentication]   # ✅ ADD
+    authentication_classes = [JWTAuthentication] 
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -20,7 +20,7 @@ class MyProfileView(APIView):
 
 
 class UploadProfileImage(APIView):
-    authentication_classes = [JWTAuthentication]   # ✅ ADD
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
@@ -40,7 +40,7 @@ class UploadProfileImage(APIView):
 
 
 class MyUserMeView(APIView):
-    authentication_classes = [JWTAuthentication]   # ✅ ADD
+    authentication_classes = [JWTAuthentication] 
     permission_classes = [IsAuthenticated]
 
     def get(self, request):

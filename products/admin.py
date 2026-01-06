@@ -1,4 +1,5 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin  # ✅ Unfold ModelAdmin
 from django.db import transaction
 from django.utils.html import format_html
 
@@ -12,10 +13,10 @@ from .models import (
 # CATEGORY
 # ==========================
 @admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
+class CategoryAdmin(ModelAdmin):  # ✅ changed
     list_display = ("id", "name", "parent")
     list_filter = ("parent",)
-    search_fields = ("name", "slug")  # ✅ tuple
+    search_fields = ("name", "slug")
     prepopulated_fields = {"slug": ("name",)}
     ordering = ("parent__id", "id")
 
@@ -24,13 +25,12 @@ class CategoryAdmin(admin.ModelAdmin):
 # PRODUCT
 # ==========================
 @admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
+class ProductAdmin(ModelAdmin):  # ✅ changed
     list_display = (
         "id", "image_preview", "name", "category",
         "price", "discount_percent", "stock",
         "is_in_stock", "is_new", "is_featured", "is_active", "created_at",
     )
-
     list_filter = ("category", "is_new", "is_featured", "is_active", "is_in_stock")
     search_fields = ("name", "slug", "sku")
     prepopulated_fields = {"slug": ("name",)}
@@ -70,7 +70,7 @@ class CartItemInline(admin.TabularInline):
 
 
 @admin.register(Cart)
-class CartAdmin(admin.ModelAdmin):
+class CartAdmin(ModelAdmin):  # ✅ changed
     list_display = ("id", "user", "created_at", "updated_at")
     search_fields = ("user__username", "user__email")
     inlines = [CartItemInline]
@@ -83,7 +83,6 @@ class CartAdmin(admin.ModelAdmin):
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 0
-    # ✅ Usually OrderItems should be read-only (snapshot)
     fields = ("product_name", "unit_price", "qty")
     readonly_fields = ("product_name", "unit_price", "qty")
     can_delete = False
@@ -93,12 +92,8 @@ class OrderItemInline(admin.TabularInline):
 
 
 @admin.register(Order)
-class OrderAdmin(admin.ModelAdmin):
-    list_display = (
-        "id", "order_code", "user",
-        "status", "total",
-        "phone", "created_at",
-    )
+class OrderAdmin(ModelAdmin):  # ✅ changed
+    list_display = ("id", "order_code", "user", "status", "total", "phone", "created_at")
     list_filter = ("status", "created_at")
     search_fields = ("order_code", "user__username", "user__email", "phone")
     ordering = ("-created_at",)
@@ -112,13 +107,12 @@ class OrderAdmin(admin.ModelAdmin):
 
 
 @admin.register(PaymentProof)
-class PaymentProofAdmin(admin.ModelAdmin):
+class PaymentProofAdmin(ModelAdmin):  # ✅ changed
     list_display = ("id", "order_code", "user", "status", "created_at", "image_preview")
     list_filter = ("status", "created_at")
     search_fields = ("order__order_code", "order__user__username", "order__user__email")
     ordering = ("-created_at",)
 
-    # ✅ prevent manual status edit to keep it consistent with actions
     readonly_fields = ("created_at", "image_preview", "order", "status")
     fieldsets = (
         ("Order", {"fields": ("order",)}),
@@ -141,7 +135,7 @@ class PaymentProofAdmin(admin.ModelAdmin):
             return format_html(
                 '<a href="{0}" target="_blank">'
                 '<img src="{0}" width="120" style="border-radius:10px;border:1px solid #eee;" />'
-                '</a>',
+                "</a>",
                 obj.image.url
             )
         return "-"
@@ -151,7 +145,6 @@ class PaymentProofAdmin(admin.ModelAdmin):
     def approve_proof(self, request, queryset):
         updated = 0
         with transaction.atomic():
-            # lock rows to avoid race conditions
             for proof in queryset.select_related("order").select_for_update():
                 proof.status = PaymentProof.VerifyStatus.APPROVED
                 proof.save(update_fields=["status"])
